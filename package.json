@@ -73,16 +73,16 @@
   },
   "devDependencies": {
     "@directus/extensions-sdk": "^18.1.0",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.6",
     "supertext-plugin-health": "file:vendor/supertext-plugin-health",
     "supertext-sdk": "file:vendor/supertext-sdk",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.3",
+    "vitest": "^5.0.5",
     "vue": "3.5.43",
-    "vue-tsc": "^3.3.12"
+    "vue-tsc": "^3.3.14"
   },
   "dependencies": {
-    "marked": "^18.1.0",
-    "node-html-parser": "^9.0.5"
+    "marked": "^18.1.2",
+    "node-html-parser": "^9.0.6"
   }
 }
