@@ -2,6 +2,8 @@
 
 AI translation for [Directus](https://directus.io) 12 by [Supertext](https://www.supertext.com). Adds a **Translate with Supertext** box to the item form: pick the languages, click *Translate*, review the translations in Directus's own Translations field and save. A Flow operation translates in bulk or automatically.
 
+![Demo: an English article in Directus, Translate with Supertext into German and French, the German version in the Translations field, saved](docs/images/demo.gif)
+
 ![The translate box in the item form](docs/images/02-translated-form.png)
 
 - Works with Directus's standard translations (languages collection + Translations field)

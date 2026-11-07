@@ -22,6 +22,8 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ### Changed
 
+- Docs: demo movie in the README (`docs/images/demo.gif`, recorded from the demo against the stand-in with `npm run docs:movie`).
+
 - Bundled Supertext SDK 0.4.0 (commit `6aaad33`): **a language nobody mapped uses its obvious default** instead of failing: `de` → `de-DE`, `en` → `en-US`, `fr` → `fr-FR`, `it` → `it-IT`, `pt` → `pt-PT`, `zh`/`zh-CN` → `zh-Hans`, `zh-TW`/`zh-HK` → `zh-Hant`, `sr` → `sr-Latn`, `es-ES` → `es`. Languages without an obvious default (`en-IE`, `de-LI`, `gsw`, `sr-RS`, …) still need a choice; only those are flagged on the Supertext page (*No default*), and the message *has no Supertext language yet* now says where to choose one.
 - Version reports, the API key check result and the reachability ping now use [Supertext Plugin Health](https://github.com/Supertext/Commando-Center-Supertext-Translation/tree/main/plugin-health) 0.1.0 (bundled from `vendor/supertext-plugin-health`); Supertext SDK updated to 0.3.0. No change for sites: settings and stored state stay as they are.
 - **Languages are no longer guessed.** A Directus language code that is a Supertext code (`de-CH`, `fr-CH`, `es`, `zh-Hans`, apart from case and `_`/`-`) is used as it is; every other code needs an entry in `SUPERTEXT_LANGUAGE_MAP`. The default regions are gone: they were wrong for most languages (Supertext wants `es`, `sl`, `nl` without region, `zh-Hans` instead of `zh-CN`). An unmapped language gets the message *has no Supertext language yet* (four languages) and nothing is sent for it; the Supertext page marks it *Not mapped* and warns about a tone Supertext doesn't offer for a language. New message for *no formal/informal tone for this language*.

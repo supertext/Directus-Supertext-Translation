@@ -253,6 +253,18 @@ DIRECTUS_URL=http://127.0.0.1:8055 EDITOR_EMAIL=… EDITOR_PASSWORD=… ADMIN_EM
 
 The script uses the editor for the translate screens (including the *Export for translation* dialog and an *Import translation* summary with a French XLIFF file filled from `translations.json`) and the admin for languages, interface options, the Flow operation and the Supertext page with its language combo boxes (where it shows the live API address instead of the stand-in's) (it closes the admin's license prompts with *Skip* / *Remind Later*, and creates a flow). 1280×900 at 1×, cropped.
 
+## Demo movie
+
+`docs/images/demo.gif` (at the top of the README) is recorded by `test/docs/movie.mjs` with Supertext's shared movie kit (`test/docs/movie/movie-kit.mjs` and `assets/`: intro and outro cards, caption bar, cursor, cuts the waiting time; Inter under the SIL OFL, `assets/fonts/Inter-LICENSE.txt`). It shows, as the demo's editor: the first sample article in English, *Translate with Supertext* with German and French ticked, *Translate*, the waiting state, the German version in the Translations field and *Save and Stay*. Run it against a fresh demo (the article must have no translations yet) and the stand-in with a delay, so the waiting state is visible:
+
+```bash
+STAND_IN_DELAY=4 node test/docs/stand-in.mjs &        # files stay in_progress for 4 s
+# fresh demo with SUPERTEXT_API_URL=http://127.0.0.1:8765/v1/ (new database)
+DIRECTUS_URL=http://127.0.0.1:8055 EDITOR_EMAIL=… EDITOR_PASSWORD=… npm run docs:movie
+```
+
+It needs `ffmpeg` and writes 1280×720 at 30 fps. The GIF (800 px, 12 fps, keep it under 3 MB) is committed; the MP4 isn't: it goes to `test/docs/movie/out/Directus-Supertext-Translation.mp4` (git-ignored) or to `MOVIE_OUT`. `CHROMIUM_PATH` picks a Chromium as for the screenshots. Record it again when the translate box or the item form changes. The kit is the same in every Supertext plugin repo: don't restyle it here.
+
 ## Dependency updates
 
 Dependabot (`.github/dependabot.yml`) opens weekly pull requests: minor and patch updates grouped into one, GitHub Actions in another, each major update on its own. Merge one when CI is green and it doesn't change what the plugin supports.
