@@ -18,6 +18,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - *Send version information to Supertext* (on by default, `SUPERTEXT_VERSION_REPORTS=0` turns it off): after an update and when the key check result changes, the extension sends the site URL, the extension, Directus, Node.js and SDK versions, whether a key is set, the key check result and the ping address to Supertext. No content, no API key and no personal data. Shown on the Supertext page.
 - Public ping endpoint `/supertext/ping` that only echoes Supertext's challenge, so Supertext can check the site is reachable (404 with version reports off).
 - The extension stores this state in a new table `supertext_state` (created automatically).
+- Support: the Supertext support form is linked in the README, the user guide and GitHub's "New issue" page.
 
 ### Changed
 

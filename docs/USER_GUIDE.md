@@ -114,3 +114,7 @@ If the source language has no text, the dialog says *Nothing to translate.* Whoe
 | *Timed out waiting…* | Try again, or translate fewer languages at once. |
 
 If you don't see the *Translate with Supertext* box, your administrator hasn't added it to this collection yet.
+
+## Support
+
+Questions, problems or ideas: use the [Supertext support form](https://integrations.supertext.com/en/support?platform=directus). Mention the version of Directus and of the plugin, what you did and what you expected; an error message helps a lot. You get an answer by email, in your language.
