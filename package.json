@@ -67,7 +67,8 @@
     "test:integration": "npm --prefix test/integration install --no-audit --no-fund && npm run build && vitest run --project integration",
     "test:all": "npm test && npm run test:integration",
     "docs:screenshots": "npm --prefix test/docs install --no-audit --no-fund && node test/docs/screenshots.mjs",
-    "docs:movie": "npm --prefix test/docs install --no-audit --no-fund && node test/docs/movie.mjs"
+    "docs:movie": "npm --prefix test/docs install --no-audit --no-fund && node test/docs/movie.mjs",
+    "docs:movie:install": "npm --prefix test/docs install --no-audit --no-fund && node test/docs/movie-install.mjs"
   },
   "engines": {
     "node": ">=22"

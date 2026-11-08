@@ -24,6 +24,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 - Tested with Directus 12.6.1: the demo and the integration tests moved from Directus 12.6.0 to 12.6.1.
 - Docs: demo movie in the README (`docs/images/demo.gif`, recorded from the demo against the stand-in with `npm run docs:movie`; the MP4 version, not committed, is narrated with the Piper voice “alba”).
+- Docs: install and configuration movie (`npm run docs:movie:install`): the install commands, the API key in `SUPERTEXT_API_KEY`, the Supertext page with *Test connection* and the language mapping, and the *Supertext translation* interface in the data model; narrated MP4, not committed.
 
 - Bundled Supertext SDK 0.4.0 (commit `6aaad33`): **a language nobody mapped uses its obvious default** instead of failing: `de` → `de-DE`, `en` → `en-US`, `fr` → `fr-FR`, `it` → `it-IT`, `pt` → `pt-PT`, `zh`/`zh-CN` → `zh-Hans`, `zh-TW`/`zh-HK` → `zh-Hant`, `sr` → `sr-Latn`, `es-ES` → `es`. Languages without an obvious default (`en-IE`, `de-LI`, `gsw`, `sr-RS`, …) still need a choice; only those are flagged on the Supertext page (*No default*), and the message *has no Supertext language yet* now says where to choose one.
 - Version reports, the API key check result and the reachability ping now use [Supertext Plugin Health](https://github.com/Supertext/Commando-Center-Supertext-Translation/tree/main/plugin-health) 0.1.0 (bundled from `vendor/supertext-plugin-health`); Supertext SDK updated to 0.3.0. No change for sites: settings and stored state stay as they are.

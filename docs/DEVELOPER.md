@@ -270,6 +270,17 @@ Voice: Piper voice “alba” (en_GB), trained on a dataset from the University 
 
 It needs `ffmpeg` and writes 1280×720 at 30 fps. The GIF (800 px, 12 fps, keep it under 3 MB) is committed; the MP4 isn't: it goes to `test/docs/movie/out/Directus-Supertext-Translation.mp4` (git-ignored) or to `MOVIE_OUT`. `CHROMIUM_PATH` picks a Chromium as for the screenshots. Record it again when the translate box or the item form changes. The kit is the same in every Supertext plugin repo: don't restyle it here.
 
+### Install movie
+
+`test/docs/movie-install.mjs` records the install and configuration movie with the same kit and voice (MP4 only, no GIF). It shows the install commands from `docs/INSTALLATION.md` in the kit's terminal (clone, `npm ci && npm run build`, copying `package.json` and `dist` to the project's `extensions/`, `SUPERTEXT_API_KEY` in `.env` with the fake key `st-demo-0000-0000-0000`, `npx directus start`), then, as the demo's **administrator**: the languages collection, *Settings → Settings → Module Bar* with Supertext, the Supertext page (key set, where to get a key, *Test connection*), the language mapping (German → *Swiss High German (de-CH)*, *Translation review* left off, *Save languages*), *Settings → Data Model → Create Field* → *Supertext translation*, and the translate box on an article. Page loads are cut, and the stand-in's local address is shown as `https://api.supertext.com/v1/`. Any demo whose `SUPERTEXT_API_URL` points at the stand-in works (it needn't be fresh):
+
+```bash
+node test/docs/stand-in.mjs &
+DIRECTUS_URL=http://127.0.0.1:8055 ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run docs:movie:install
+```
+
+The MP4 (about 100 s) goes to `test/docs/movie/out/Directus-Supertext-Translation-install.mp4` (git-ignored) or to `MOVIE_OUT`; it isn't committed. Record it again when the install steps, the Supertext page or the data model's field picker change.
+
 ## Dependency updates
 
 Dependabot (`.github/dependabot.yml`) opens weekly pull requests: minor and patch updates grouped into one, GitHub Actions in another, each major update on its own. Merge one when CI is green and it doesn't change what the plugin supports.
