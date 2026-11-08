@@ -246,7 +246,7 @@ describe('Commando Center', () => {
 			event: 'installed',
 			site_url: directus.url,
 			plugin: { name: 'Directus-Supertext-Translation' },
-			system: { name: 'Directus', version: '12.6.0' },
+			system: { name: 'Directus', version: '12.6.1' },
 			runtime: { name: 'Node.js' },
 			api_key_configured: true,
 			api_key_check: { status: 'ok', http_status: 200 },

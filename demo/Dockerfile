@@ -9,7 +9,7 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npx directus-extension build
 
-FROM directus/directus:12.6.0
+FROM directus/directus:12.6.1
 USER root
 COPY --from=build /src/dist /directus/extensions/directus-extension-supertext-translation/dist
 COPY package.json /directus/extensions/directus-extension-supertext-translation/package.json
