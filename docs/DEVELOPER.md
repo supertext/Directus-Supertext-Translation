@@ -255,13 +255,18 @@ The script uses the editor for the translate screens (including the *Export for 
 
 ## Demo movie
 
-`docs/images/demo.gif` (at the top of the README) is recorded by `test/docs/movie.mjs` with Supertext's shared movie kit (`test/docs/movie/movie-kit.mjs` and `assets/`: intro and outro cards, caption bar, cursor, cuts the waiting time; Inter under the SIL OFL, `assets/fonts/Inter-LICENSE.txt`). It shows, as the demo's editor: the first sample article in English, *Translate with Supertext* with German and French ticked, *Translate*, the waiting state, the German version in the Translations field and *Save and Stay*. Run it against a fresh demo (the article must have no translations yet) and the stand-in with a delay, so the waiting state is visible:
+`docs/images/demo.gif` (at the top of the README) is recorded by `test/docs/movie.mjs` with Supertext's shared movie kit (`test/docs/movie/movie-kit.mjs` and `assets/`: intro and outro cards, caption bar, cursor, cuts the waiting time; Inter under the SIL OFL, `assets/fonts/Inter-LICENSE.txt`). It shows, with a spoken line for every step (the GIF is silent), as the demo's editor: the first sample article in English, *Translate with Supertext* with German and French ticked, *Translate*, the waiting state, the German version in the Translations field and *Save and Stay*. Run it against a fresh demo (the article must have no translations yet) and the stand-in with a delay, so the waiting state is visible:
 
 ```bash
 STAND_IN_DELAY=4 node test/docs/stand-in.mjs &        # files stay in_progress for 4 s
 # fresh demo with SUPERTEXT_API_URL=http://127.0.0.1:8765/v1/ (new database)
+pip install piper-tts                                   # the voice (once)
 DIRECTUS_URL=http://127.0.0.1:8055 EDITOR_EMAIL=… EDITOR_PASSWORD=… npm run docs:movie
 ```
+
+The MP4 is narrated with [Piper](https://pypi.org/project/piper-tts/) (`pip install piper-tts`): the kit's `say()` speaks each step's line, shows its caption and holds until the line is finished; the time spent making the speech is cut. The voice model (63 MB, pinned revision, checked by SHA-256) downloads itself once into `test/docs/movie/voice/` (git-ignored; never commit it). Without Piper, or with `MOVIE_VOICE=0`, the movie is made silent with the captions only.
+
+Voice: Piper voice “alba” (en_GB), trained on a dataset from the University of Edinburgh's Centre for Speech Technology Research, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
 
 It needs `ffmpeg` and writes 1280×720 at 30 fps. The GIF (800 px, 12 fps, keep it under 3 MB) is committed; the MP4 isn't: it goes to `test/docs/movie/out/Directus-Supertext-Translation.mp4` (git-ignored) or to `MOVIE_OUT`. `CHROMIUM_PATH` picks a Chromium as for the screenshots. Record it again when the translate box or the item form changes. The kit is the same in every Supertext plugin repo: don't restyle it here.
 

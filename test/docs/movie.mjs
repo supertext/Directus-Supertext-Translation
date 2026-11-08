@@ -45,49 +45,67 @@ const scrollTo = async (locator, block = 'start') => {
 	await page.waitForTimeout(900);
 };
 
-const kit = await MovieKit.start(page, { workDir, assets: here('movie/assets') });
+const kit = await MovieKit.start(page, { workDir, assets: here('movie/assets'), voiceCache: here('movie/voice') });
 
 // 1. The article in English.
-await kit.caption('An article in English', 1500);
-await scrollTo(field('Title'));
-await kit.hold(1800);
-await scrollTo(page.locator('.v-form').first());
+await kit.say("Here's an article in Directus, written in English.", {
+	caption: 'An article in English',
+	during: async () => {
+		await scrollTo(field('Title'));
+		await kit.hold(900);
+		await scrollTo(page.locator('.v-form').first());
+	},
+});
 
 // 2. Choose the languages in the Supertext box: German and French (Italian unticked).
-await kit.caption('<b>Translate with Supertext</b>: choose the languages', 600);
-await kit.click(box.locator('.target').filter({ hasText: 'it-CH' }).locator('.v-checkbox .v-icon').first());
-await kit.moveTo(box.locator('.target').filter({ hasText: 'de-CH' }).locator('.v-checkbox .v-icon').first());
-await kit.hold(1400);
+const tick = (code) => box.locator('.target').filter({ hasText: code }).locator('.v-checkbox .v-icon').first();
+await kit.say('In the Translate with Supertext box, keep German and French ticked.', {
+	caption: '<b>Translate with Supertext</b>: choose the languages',
+	during: async () => {
+		await kit.click(tick('it-CH'));
+		await kit.moveTo(tick('de-CH'));
+	},
+});
 
 // 3. Translate.
-await kit.caption('Click <b>Translate</b>', 600);
-await kit.click(box.locator('.actions').getByRole('button').first());
+await kit.say('Then click Translate.', { caption: 'Click <b>Translate</b>', during: () => kit.click(box.locator('.actions').getByRole('button').first()) });
 
 // 4. Waiting.
-await kit.caption('Supertext translates the content…');
-await box.locator('.hint').waitFor();
-await kit.hold(1300);
+await kit.say('Supertext translates the content.', { caption: 'Supertext translates the content…', during: () => box.locator('.hint').waitFor() });
 kit.pause();
 await box.locator('.result').first().waitFor({ timeout: 180_000 });
 await page.waitForTimeout(400);
 kit.resume();
-await kit.caption('German and French are in the form', 2600);
+await kit.say('A few seconds later, German and French are in the form.', {
+	caption: 'German and French are in the form',
+	during: async () => {
+		await kit.hold(1200);
+		await scrollTo(field('Translations'));
+	},
+});
 
 // 5. The German version, then save.
-await scrollTo(field('Translations'));
-await kit.caption('Switch the <b>Translations</b> field to German', 300);
-await kit.click(field('Translations').getByText('English', { exact: true }).first());
-await page.waitForTimeout(300);
-await kit.click(page.locator('.v-list-item, [role=menuitem], li').filter({ hasText: 'Deutsch' }).first());
-await page.waitForTimeout(600);
-await scrollTo(field('Translations'));
-await kit.caption('The German version is ready – review it', 2800);
-await kit.caption('Save with <b>Save and Stay</b>', 300);
-await kit.click(page.getByRole('button', { name: 'More options' }).first());
-await page.waitForTimeout(300);
-await kit.click(page.locator('.v-list-item').filter({ hasText: 'Save and Stay' }).first());
-await page.waitForTimeout(1200);
-await kit.caption('Saved: the article now has German and French', 2600);
+await kit.say('To check the German version, switch the Translations field to German.', {
+	caption: 'Switch the <b>Translations</b> field to German',
+	during: async () => {
+		await kit.click(field('Translations').getByText('English', { exact: true }).first());
+		await page.waitForTimeout(300);
+		await kit.click(page.locator('.v-list-item, [role=menuitem], li').filter({ hasText: 'Deutsch' }).first());
+		await page.waitForTimeout(600);
+		await scrollTo(field('Translations'));
+	},
+});
+await kit.say('The German version is ready. Review it, just like your own text.', { caption: 'The German version is ready – review it' });
+await kit.say("When you're happy with it, open the Save menu and click Save and Stay.", {
+	caption: 'Save with <b>Save and Stay</b>',
+	during: async () => {
+		await kit.click(page.getByRole('button', { name: 'More options' }).first());
+		await page.waitForTimeout(300);
+		await kit.click(page.locator('.v-list-item').filter({ hasText: 'Save and Stay' }).first());
+		await page.waitForTimeout(800);
+	},
+});
+await kit.say('Done. The article now speaks German and French.', { caption: 'Saved: the article now has German and French' });
 await kit.caption('');
 
 await kit.finish(mp4, { system: 'Directus', repo: 'Directus-Supertext-Translation', gif });

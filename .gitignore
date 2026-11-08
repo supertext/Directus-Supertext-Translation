@@ -5,3 +5,4 @@ dist/
 .env.local
 coverage/
 test/docs/movie/out/
+test/docs/movie/voice/
