@@ -39,7 +39,7 @@ vendor/supertext-plugin-health/  Supertext Plugin Health (TypeScript, built), bu
 scripts/vendor-sdk.sh      updates vendor/supertext-sdk
 scripts/vendor-plugin-health.sh  updates vendor/supertext-plugin-health
 demo/                      Railway demo (Dockerfile, start script, demo setup hook)
-test/                      unit tests, integration tests (real Directus), docs screenshots
+test/                      unit tests, integration tests (real Directus), docs screenshots, end-to-end tests (test/e2e)
 ```
 
 ### Data model
@@ -209,6 +209,26 @@ npm run test:integration # builds, then starts a real Directus 12 (SQLite) — i
 - `test/integration/directus.test.ts`: Directus 12.6 in a temp folder (needs Node.js 26) with the built bundle and the demo setup hook, Supertext replaced by `fake-supertext-server.ts` (prefixes `[<lang>] `). Demo setup (languages, articles, accounts, no passwords in the log), `/info`, translating without saving, structure of rich text, failed languages, unknown languages/missing source, read-only users get 403 and send nothing, saving through the parent and updating the same row, the Flow operation with a manual trigger, translate-on-create without a loop, an export → import round trip (`/supertext/export` as XLIFF, a target added, `/supertext/import` returns the values; another item's file is refused), and the Commando Center (public ping, key check, the `installed` report with Directus 12.6.1 and the callback URL, sent to the fake's `POST /report`, never containing the key).
 
 CI (`.github/workflows/ci.yml`): **test** (typecheck and unit tests on Node 22, 24 and 26; integration tests on Node 26, which Directus 12.6 needs) and **demo** (builds `demo/Dockerfile`, runs `test/demo-check.sh` against a PostgreSQL service and the stand-in).
+
+## End-to-end tests
+
+The unit and integration tests use fakes. `.github/workflows/e2e.yml` also tests against the **real Supertext API**, so changes on Supertext's side (language codes, regional variants, formatting, rate limits) show up. It runs on every push to `main` that touches the extension, the vendored packages, the demo or the tests, on pull requests that change the E2E test or workflow, every Monday (05:15 UTC), and by hand (*Actions → E2E → Run workflow*). It builds the demo image once (Docker layer cache in GitHub Actions) and starts it twice on a PostgreSQL service, each with a new database (`directus_live`, `directus_docs`) and demo accounts made up for the run:
+
+1. **Real API** (repository or organization secret `SUPERTEXT_API_KEY`; without it these steps are skipped with a warning). Version reports are off (`SUPERTEXT_VERSION_REPORTS=0`), so CI runs don't appear in the Commando Center.
+   - `test/e2e/features.mjs` asks the live `GET features` (cost-free, no plugin or SDK code) whether every pair the demo translates (`en` → `de-CH`, `fr-CH`, `it-CH`, as the extension sends them for the demo's `en-US` source) is offered; a missing pair fails the run. Whether the extension's own language list matches the API is the SDK's job (its own tests).
+   - `test/e2e/live.mjs` (Playwright): the demo editor opens each sample article in the Directus app, clicks **Translate** in the *Translate with Supertext* box (all target languages preselected) and saves the form. Then the data is checked through Directus's REST API (as the editor): each article has exactly one translation row per target language, title, summary and body are filled and at least 80 % of them changed (single words may stay the same), no `data-st-id`/placeholder is left, links (and their targets), bold, italics, headings, paragraphs, list items and quotes are kept, the text is in the target language (common words of each language counted), de-CH has no "ß", and the source row and the article status are unchanged. The box and Directus must show no error. Translating again (the replace warning is confirmed) must update the same rows (no duplicates). Each run translates the two sample articles twice into three languages (around 6,000 characters on the key's account).
+2. **Stand-in API**: the docs screenshots (see *Docs screenshots*), so the images don't change with each machine translation. If `docs/images/` changed, a second job pushes the branch `automation/docs-screenshots` and opens (or updates) the pull request "Docs: regenerate screenshots" (only for runs on `main`). This needs *Settings → Actions → General → Allow GitHub Actions to create and approve pull requests*.
+
+If a run fails, the artifact `e2e-debug` has the result pages (screenshots of each article after translating), the demo logs and the stand-in log. Locally:
+
+```bash
+cd test/e2e && npm install && npx playwright install chromium
+# fresh demo (new database) with a real SUPERTEXT_API_KEY, e.g. on port 8081 (see Demo)
+SUPERTEXT_API_KEY=… E2E_SOURCE=en E2E_TARGETS=de-CH,fr-CH,it-CH node features.mjs
+DIRECTUS_URL=http://127.0.0.1:8081 EDITOR_EMAIL=… EDITOR_PASSWORD=… npm run live
+```
+
+`live.mjs` also passes against the stand-in API (it returns real translations for the sample articles), which is how to try changes to it without a key.
 
 ## Demo (`demo/`)
 
