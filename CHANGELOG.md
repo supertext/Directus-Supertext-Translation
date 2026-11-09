@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ## [Unreleased]
 
+### Changed
+
+- Development: `@types/node` back on Node 22 (the oldest supported Node version), the build tools take the fixed `vite`, `serialize-javascript` and `decode-uri-component`, and the integration tests' Directus forces fixed versions of `tar`, `js-yaml`, `zod`, `@ai-sdk/provider-utils` and `@opentelemetry/core` (npm `overrides`). No change to the extension itself.
+
 ## [1.0.0] - 2026-11-09
 
 First stable release. Every plugin release is now tested end to end against the live Supertext API (`.github/workflows/e2e.yml`).

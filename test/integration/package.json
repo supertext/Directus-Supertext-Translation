@@ -4,5 +4,12 @@
   "description": "A real Directus for the integration tests (see docs/DEVELOPER.md)",
   "dependencies": {
     "directus": "12.6.1"
+  },
+  "overrides": {
+    "tar": "^7.5.22",
+    "js-yaml@4": "^4.3.2",
+    "zod@4": "^4.6.7",
+    "@ai-sdk/provider-utils@4": "^4.0.33",
+    "@opentelemetry/core@2": "^2.12.0"
   }
 }

@@ -75,7 +75,7 @@
   },
   "devDependencies": {
     "@directus/extensions-sdk": "^18.1.1",
-    "@types/node": "^26.6.6",
+    "@types/node": "^22.20.5",
     "supertext-plugin-health": "file:vendor/supertext-plugin-health",
     "supertext-sdk": "file:vendor/supertext-sdk",
     "typescript": "^5.9.3",
