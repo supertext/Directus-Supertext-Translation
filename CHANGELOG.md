@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-09
+
+First stable release. Every plugin release is now tested end to end against the live Supertext API (`.github/workflows/e2e.yml`).
+
 ### Added
 
 - Support for Directus 12.6 and Node.js 24 and 26: tested in CI on Node 22, 24 and 26, with the integration tests on Directus 12.6.0 (which needs Node.js 26); the demo runs Directus 12.6.0. Directus extensions SDK 18.1.
