@@ -4,6 +4,7 @@ import { buildDocument, parseDocument } from '../shared/document.js';
 import { politenessFor, sourceCode, targetCode } from '../shared/languages.js';
 import { SupertextClient, SupertextError } from '../shared/supertext-client.js';
 import type { SupertextConfig } from './config.js';
+import { userAgent } from './version.js';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Services = Record<string, any>;
@@ -219,13 +220,16 @@ export async function translateItem(args: TranslateArgs): Promise<TranslateResul
 		baseUrl: config.baseUrl,
 		pollIntervalMs: config.pollIntervalMs,
 		timeoutMs: config.timeoutMs,
+		userAgent: userAgent(),
+		reviewUrl: config.reviewUrl,
 		fetch: args.fetch,
 		sleep: args.sleep,
 	});
 
 	const translateOne = async (language: string): Promise<LanguageResult> => {
 		try {
-			const translatedHtml = await client.translateHtml({
+			// Languages with *Translation review* on go through the review service (whole round trip on that client).
+			const translatedHtml = await client.forReview(config.review[language] === true).translateHtml({
 				html,
 				targetLang: targetCode(language, config.languageMap),
 				sourceLang: sourceCode(source, config.languageMap),

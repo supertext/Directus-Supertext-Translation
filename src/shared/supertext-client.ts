@@ -26,6 +26,14 @@ export const SUPERTEXT_ENVIRONMENTS = {
 
 export type SupertextEnvironment = keyof typeof SUPERTEXT_ENVIRONMENTS
 
+/**
+ * Supertext's review service (translation proxy of Supertext Localization Review). It speaks
+ * the same API v1 and forwards to the live Supertext API with the same key, keeping every
+ * translation so reviewers can correct them on the website. Used for languages with
+ * *Translation review* on.
+ */
+export const REVIEW_URL = 'https://localizationreview-production.up.railway.app/v1/'
+
 export type SupertextClientOptions = {
   apiKey: string
   /** Base URL with trailing slash. Defaults to the live API. */
@@ -40,6 +48,10 @@ export type SupertextClientOptions = {
   requestTimeoutMs?: number
   /** Sleep implementation (tests). */
   sleep?: (ms: number) => Promise<void>
+  /** User-Agent, e.g. `Directus-Supertext-Translation/0.1.0`. */
+  userAgent?: string
+  /** Review service for languages with *Translation review* on ('' or omitted: none). */
+  reviewUrl?: string
 }
 
 export type TranslateFileArgs = {
@@ -53,18 +65,35 @@ export type TranslateFileArgs = {
 
 export class SupertextClient {
   private readonly sdk: SdkClient
+  private readonly options: SupertextClientOptions
+  private reviewClient: SupertextClient | null = null
 
   constructor(options: SupertextClientOptions) {
+    this.options = options
     const pollIntervalMs = Math.max(100, options.pollIntervalMs ?? 2000)
     this.sdk = new SdkClient(options.apiKey, {
       baseUrl: options.baseUrl ?? SUPERTEXT_ENVIRONMENTS.live,
       pollIntervalMs,
       timeoutMs: Math.max(pollIntervalMs, options.timeoutMs ?? 180_000),
       requestTimeoutMs: options.requestTimeoutMs ?? 30_000,
-      userAgent: 'directus-extension-supertext-translation',
+      userAgent: options.userAgent ?? 'Directus-Supertext-Translation',
       ...(options.fetch ? { fetch: options.fetch as FetchLike } : {}),
       ...(options.sleep ? { sleep: options.sleep } : {}),
     })
+  }
+
+  /**
+   * The client for a target language: the review service when its *Translation review* is on
+   * (same key, timeouts, fetch and User-Agent), else this one. Without a review URL, or with
+   * the same URL as the API, always this one. Each round trip (upload, status, download,
+   * delete) runs on one client, so a job is collected where it was submitted.
+   */
+  forReview(review: boolean): SupertextClient {
+    const reviewUrl = (this.options.reviewUrl ?? '').trim()
+    const baseUrl = this.options.baseUrl ?? SUPERTEXT_ENVIRONMENTS.live
+    if (!review || !reviewUrl || reviewUrl.replace(/\/+$/, '') === baseUrl.replace(/\/+$/, '')) return this
+    this.reviewClient ??= new SupertextClient({ ...this.options, baseUrl: reviewUrl, reviewUrl: '' })
+    return this.reviewClient
   }
 
   /** Full round trip: upload, wait, download, delete. Returns the translated HTML. */

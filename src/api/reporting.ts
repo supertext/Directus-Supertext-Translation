@@ -4,11 +4,12 @@
  * The protocol is Supertext Plugin Health's (`InstallationReporter`, `pingResponse`; bundled
  * from vendor/supertext-plugin-health), the key check the Supertext SDK's (`checkApiKey()`,
  * `apiKeyFingerprint`). This file only gives them what Directus knows: the site URL, the Directus and extension versions, and a place to keep
- * the reporter's state (the table `supertext_state`, created on first use).
+ * the reporter's state (the table `supertext_state`, created on first use, which also holds the saved language mapping).
  *
- * Directus has no settings form for the extension (everything is in the environment), so
- * there is no "settings saved": the key check runs when the key from SUPERTEXT_API_KEY
- * changed (fingerprint), on "Test connection" and after a 401/403 from Supertext.
+ * The only settings form is the language mapping on the Supertext page; saving it reports
+ * `settings_saved`. The key itself is in the environment, so the key check runs when the key
+ * from SUPERTEXT_API_KEY changed (fingerprint), on "Test connection", after saving the
+ * languages and after a 401/403 from Supertext.
  */
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
@@ -83,7 +84,7 @@ export function directusVersion(): string | null {
 	return directusVersionCache ?? null;
 }
 
-/** Reads and writes the reporter's state in `supertext_state` (one row, JSON). */
+/** Reads and writes the extension's state in `supertext_state` (one JSON row per key: `reporter`, `languages`). */
 export class StateStore {
 	#ready: Promise<void> | null = null;
 
@@ -104,17 +105,25 @@ export class StateStore {
 		return this.#ready;
 	}
 
-	async load(): Promise<ReporterState> {
+	/** The stored JSON of a key, or null. */
+	async read(key: string): Promise<string | null> {
 		await this.#ensureTable();
-		const row = await this.database(STATE_TABLE).where({ key: STATE_KEY }).first('value');
-		return reporterState(row?.value ?? null);
+		const row = await this.database(STATE_TABLE).where({ key }).first('value');
+		return row?.value ?? null;
+	}
+
+	async write(key: string, value: string): Promise<void> {
+		await this.#ensureTable();
+		const updated = await this.database(STATE_TABLE).where({ key }).update({ value });
+		if (!updated) await this.database(STATE_TABLE).insert({ key, value });
+	}
+
+	async load(): Promise<ReporterState> {
+		return reporterState(await this.read(STATE_KEY));
 	}
 
 	async save(state: ReporterState): Promise<void> {
-		await this.#ensureTable();
-		const value = JSON.stringify(state);
-		const updated = await this.database(STATE_TABLE).where({ key: STATE_KEY }).update({ value });
-		if (!updated) await this.database(STATE_TABLE).insert({ key: STATE_KEY, value });
+		await this.write(STATE_KEY, JSON.stringify(state));
 	}
 }
 
@@ -126,7 +135,7 @@ export type ReportingContext = {
 	reporterOverrides?: Partial<ReporterOptions> & { clientOptions?: SupertextClientOptions };
 };
 
-type Action = 'onRequest' | 'testConnection' | 'authenticationFailed';
+type Action = 'onRequest' | 'testConnection' | 'authenticationFailed' | 'settingsSaved';
 
 /**
  * The extension's side of the Commando Center: one per endpoint/operation registration.
@@ -153,7 +162,7 @@ export class Reporting {
 		const { clientOptions: overrideClientOptions, ...overrides } = this.ctx.reporterOverrides ?? {};
 		const clientOptions: SupertextClientOptions = {
 			baseUrl: config.baseUrl,
-			userAgent: 'directus-extension-supertext-translation',
+			userAgent: `${PLUGIN_NAME}/${extensionVersion() ?? '0.0.0'}`,
 			...(overrides.now ? { now: overrides.now } : {}),
 			...overrideClientOptions,
 		};
@@ -181,7 +190,9 @@ export class Reporting {
 						? await reporter.authenticationFailed(state, config.apiKey, httpStatus ?? 401)
 						: action === 'testConnection'
 							? await reporter.testConnection(state, config.apiKey)
-							: await reporter.onRequest(state, config.apiKey);
+							: action === 'settingsSaved'
+								? await reporter.afterSettingsSaved(state, config.apiKey)
+								: await reporter.onRequest(state, config.apiKey);
 				await this.store.save(result.state);
 				if (result.event) this.ctx.logger.debug(`[supertext] version report ${result.event}: ${result.sent ? 'sent' : 'not sent'}`);
 				return result;

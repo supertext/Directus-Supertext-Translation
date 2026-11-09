@@ -3,6 +3,6 @@
   "private": true,
   "description": "A real Directus for the integration tests (see docs/DEVELOPER.md)",
   "dependencies": {
-    "directus": "12.5.0"
+    "directus": "12.6.1"
   }
 }

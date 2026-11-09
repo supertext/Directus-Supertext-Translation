@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { sourceCode, supportsPoliteness, targetCode, targetCodeOrNull } from '../src/shared/languages.js'
+import { sourceCode, suggestTarget, supportsPoliteness, targetCode, targetCodeOrNull, targetOptions } from '../src/shared/languages.js'
 import { SupertextClient, SupertextError } from '../src/shared/supertext-client.js'
 import { fakeSupertext } from './fakeSupertext.js'
 
@@ -87,7 +87,7 @@ describe('SupertextClient', () => {
   })
 })
 
-describe('language codes (no guessing)', () => {
+describe('language codes (defaults only where obvious)', () => {
   it('sends a bare source language', () => {
     expect(sourceCode('en')).toBe('en')
     expect(sourceCode('de-CH')).toBe('de')
@@ -99,11 +99,26 @@ describe('language codes (no guessing)', () => {
     expect(targetCode('es')).toBe('es')
     expect(targetCode('zh-hant')).toBe('zh-Hant')
   })
-  it('refuses codes Supertext does not have, without a default region', () => {
-    for (const code of ['de', 'en', 'sl-SI', 'zh-CN', 'xx']) {
+  it('uses the SDK default where one is obvious', () => {
+    expect(targetCode('de')).toBe('de-DE')
+    expect(targetCode('en')).toBe('en-US')
+    expect(targetCode('zh-CN')).toBe('zh-Hans')
+    expect(targetCode('zh-TW')).toBe('zh-Hant')
+    expect(targetCode('es-ES')).toBe('es')
+    expect(suggestTarget('de')).toBe('de-DE')
+    expect(suggestTarget('de_ch')).toBe('de-CH')
+  })
+  it('refuses codes without a match or a default', () => {
+    for (const code of ['en-IE', 'de-LI', 'gsw', 'sr-RS', 'xx']) {
       expect(() => targetCode(code)).toThrow(expect.objectContaining({ code: 'unsupported_language' }))
+      expect(suggestTarget(code)).toBeNull()
     }
-    expect(targetCodeOrNull('de')).toBeNull()
+    expect(targetCodeOrNull('en-IE')).toBeNull()
+  })
+  it('offers the targets for the combo box', () => {
+    const options = targetOptions()
+    expect(options.map((o) => o.code)).toContain('de-CH')
+    expect(options.map((o) => o.code)).not.toContain('de')
   })
   it('lets the mapping win', () => {
     expect(targetCode('ch', { ch: 'de-CH' })).toBe('de-CH')

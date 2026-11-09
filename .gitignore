@@ -4,4 +4,6 @@ dist/
 .env
 .env.local
 coverage/
+test/docs/movie/out/
+test/docs/movie/voice/
 /test/e2e/artifacts/

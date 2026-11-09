@@ -150,6 +150,42 @@ describe('/supertext/translate (item form)', () => {
 	});
 });
 
+describe('translation files', () => {
+	it('exports an item as XLIFF and imports the translated file into form values', async () => {
+		const token = await login(directus.url, EDITOR);
+		const auth = { authorization: `Bearer ${token}` };
+		const exported = await fetch(`${directus.url}/supertext/export`, {
+			method: 'POST',
+			headers: { ...auth, 'content-type': 'application/json' },
+			body: JSON.stringify({ collection: 'articles', item: 2, source: 'en-US', targets: ['fr-CH'], format: 'xliff' }),
+		});
+		expect(exported.status).toBe(200);
+		expect(exported.headers.get('content-type')).toMatch(/^application\/x-xliff\+xml/);
+		expect(exported.headers.get('content-disposition')).toBe('attachment; filename="directus-2-fr-CH.xlf"');
+		const xliff = await exported.text();
+		expect(xliff).toContain('original="item:articles:2:translations:en-US:fr-CH"');
+		const title = /<trans-unit id="title\.0"[^>]*>\s*<source>([^<]*)<\/source>/.exec(xliff)![1]!;
+		const translated = xliff.replace(`<source>${title}</source>`, `<source>${title}</source><target>Titre traduit</target>`);
+		const upload = (path: string, body: string) => fetch(`${directus.url}${path}`, { method: 'POST', headers: { ...auth, 'content-type': 'text/plain' }, body });
+		const imported = await upload('/supertext/import?collection=articles&item=2', translated);
+		expect(imported.status).toBe(200);
+		const [job] = (await imported.json()).data.jobs;
+		expect(job).toMatchObject({ ok: true, language: 'fr-CH', imported: 1, values: { title: 'Titre traduit' } });
+		expect(job.counts.untranslated).toBeGreaterThan(0);
+		// Nothing saved: the form applies the values and the editor saves.
+		expect((await translationsOf(2))['fr-CH']?.title).not.toBe('Titre traduit');
+		// The file of another item, and an invalid file.
+		const other = (await (await upload('/supertext/import?collection=articles&item=1', translated)).json()).data.jobs[0];
+		expect(other.error).toMatchObject({ code: 'other_item' });
+		const invalid = await upload('/supertext/import?collection=articles&item=2', 'not a file');
+		expect(invalid.status).toBe(400);
+		expect((await invalid.json()).errors[0].extensions).toMatchObject({ code: 'invalid_file', key: 'files.error.invalid_file' });
+		// Signed out: refused.
+		const anonymous = await fetch(`${directus.url}/supertext/import?collection=articles&item=2`, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: translated });
+		expect(anonymous.status).toBe(401);
+	});
+});
+
 describe('Flow operation', () => {
 	const createFlow = async (flow: Record<string, unknown>, options: Record<string, unknown>) => {
 		const created = await admin.post('/flows', { status: 'active', accountability: 'all', icon: 'translate', ...flow });
@@ -210,7 +246,7 @@ describe('Commando Center', () => {
 			event: 'installed',
 			site_url: directus.url,
 			plugin: { name: 'Directus-Supertext-Translation' },
-			system: { name: 'Directus', version: '12.5.0' },
+			system: { name: 'Directus', version: '12.6.1' },
 			runtime: { name: 'Node.js' },
 			api_key_configured: true,
 			api_key_check: { status: 'ok', http_status: 200 },

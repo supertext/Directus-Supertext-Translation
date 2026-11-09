@@ -2,6 +2,7 @@ import { defineOperationApi } from '@directus/extensions-sdk';
 import { readConfig } from '../api/config.js';
 import { translateItem, type TranslateResult } from '../api/translator.js';
 import { Reporting, siteUrl } from '../api/reporting.js';
+import { loadLanguageSettings, withLanguageSettings } from '../api/settings.js';
 
 let reporting: Reporting | null = null;
 
@@ -37,7 +38,8 @@ export default defineOperationApi<Options>({
 		if (!items.length) throw new Error('Supertext: no item keys (set them in the operation or use an item trigger).');
 
 		const schema = await getSchema();
-		const config = readConfig(env);
+		// The environment's settings with the language mapping from the Supertext page (the environment wins per language).
+		const config = withLanguageSettings(readConfig(env), await loadLanguageSettings(reporting.store, logger));
 		const done: TranslateResult[] = [];
 		const failures: string[] = [];
 		for (const item of items) {

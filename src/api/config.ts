@@ -1,10 +1,14 @@
 import type { Politeness, SupertextEnvironment } from '../shared/supertext-client.js';
-import { SUPERTEXT_ENVIRONMENTS } from '../shared/supertext-client.js';
+import { REVIEW_URL, SUPERTEXT_ENVIRONMENTS } from '../shared/supertext-client.js';
 
 /** Server-side settings, read from Directus's environment (`.env` / container variables). */
 export type SupertextConfig = {
 	apiKey: string;
 	baseUrl: string;
+	/** Review service for languages with *Translation review* on (SUPERTEXT_REVIEW_URL; '' = review off everywhere). */
+	reviewUrl: string;
+	/** Directus language code → true where *Translation review* is on (saved on the Supertext page). */
+	review: Record<string, boolean>;
 	languageMap: Record<string, string>;
 	politeness: Record<string, Politeness>;
 	pollIntervalMs: number;
@@ -56,6 +60,9 @@ export function readConfig(directusEnv: Env, processEnv: Record<string, string |
 	return {
 		apiKey: String(env.SUPERTEXT_API_KEY ?? '').trim(),
 		baseUrl,
+		// Unset: Supertext's review service; set to an empty value: off for every language.
+		reviewUrl: env.SUPERTEXT_REVIEW_URL === undefined || env.SUPERTEXT_REVIEW_URL === null ? REVIEW_URL : String(env.SUPERTEXT_REVIEW_URL).trim(),
+		review: {},
 		languageMap: jsonObject(env.SUPERTEXT_LANGUAGE_MAP, 'SUPERTEXT_LANGUAGE_MAP'),
 		politeness: politeness as Record<string, Politeness>,
 		pollIntervalMs: num(env.SUPERTEXT_POLL_INTERVAL, 2) * 1000,

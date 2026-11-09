@@ -34,3 +34,8 @@ export function extensionVersion(start: string = dirname(fileURLToPath(import.me
 	return version;
 }
 
+
+/** The User-Agent for Supertext requests: `Directus-Supertext-Translation/<version>` (version as in the reports). */
+export function userAgent(): string {
+	return `Directus-Supertext-Translation/${extensionVersion() ?? '0.0.0'}`;
+}

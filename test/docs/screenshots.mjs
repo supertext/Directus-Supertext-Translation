@@ -8,6 +8,9 @@
  */
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'node:url';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const B = process.env.DIRECTUS_URL ?? 'http://127.0.0.1:8055';
 const out = fileURLToPath(new URL('../../docs/images/', import.meta.url));
@@ -17,6 +20,7 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 
 async function session(email, password) {
 	const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, locale: 'en-US' });
+	page.setDefaultTimeout(90_000); // slow machines: Directus and the stand-in share the CPU with the browser
 	await page.goto(`${B}/admin/login`);
 	await page.fill('input[type=email]', email);
 	await page.fill('input[type=password]', password);
@@ -78,7 +82,7 @@ await box.locator('.targets').waitFor();
 await shot(box, '01-translate-box.png');
 
 await box.getByRole('button', { name: 'Translate' }).click();
-await box.locator('.result').first().waitFor({ timeout: 60_000 });
+await box.locator('.result').first().waitFor({ timeout: 180_000 });
 await editor.waitForTimeout(500);
 await clip(editor, box, field(editor, 'Translations'), '02-translated-form.png');
 
@@ -103,6 +107,50 @@ await dialog.waitFor();
 await editor.waitForTimeout(400);
 await shot(dialog, '04-replace-warning.png');
 await dialog.getByRole('button', { name: 'Cancel' }).click();
+
+// Translation files: "Export for translation" and "Import translation" in the same box.
+await box.getByRole('button', { name: 'Export for translation' }).click();
+const exportDialog = editor.locator('#dialog-outlet .v-card').filter({ hasText: 'File format' });
+await exportDialog.waitFor();
+await editor.waitForTimeout(400);
+await shot(exportDialog, '11-export-dialog.png');
+await exportDialog.getByRole('button', { name: 'Cancel' }).click();
+// The file the dialog downloads (fetched the same way) for French, with the stand-in's French
+// for the segments without formatting; the others stay untranslated.
+const xliff = await editor.evaluate(async (base) => {
+	const r = await fetch(`${base}/auth/refresh`, { method: 'POST', credentials: 'include', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode: 'session' }) });
+	const token = (await r.json()).data?.access_token;
+	const file = await fetch(`${base}/supertext/export`, {
+		method: 'POST',
+		credentials: 'include',
+		headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+		body: JSON.stringify({ collection: 'articles', item: 1, source: 'en-US', targets: ['fr-CH'], format: 'xliff' }),
+	});
+	return file.text();
+}, B);
+const french = JSON.parse(readFileSync(new URL('translations.json', import.meta.url), 'utf8'))['fr-CH'];
+const xmlText = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+const htmlText = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const xml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const filled = xliff.replace(/<source>([^<]*)<\/source>/g, (all, text) => {
+	const fr = french[htmlText(xmlText(text))];
+	return fr && !fr.includes('<') ? `${all}<target>${xml(xmlText(fr))}</target>` : all;
+});
+const upload = join(tmpdir(), 'directus-1-fr-CH.xlf');
+writeFileSync(upload, filled);
+await box.getByRole('button', { name: 'Import translation' }).click();
+const importDialog = editor.locator('#dialog-outlet .v-card').filter({ hasText: 'Translated file' });
+await importDialog.waitFor();
+await importDialog.locator('#supertext-file').setInputFiles(upload);
+await importDialog.getByRole('button', { name: 'Import translation' }).click();
+// French exists already: the same confirmation as for Translate.
+const replace = editor.locator('#dialog-outlet .v-card').filter({ hasText: 'Replace existing translations' });
+await replace.waitFor();
+await replace.getByRole('button', { name: 'Replace' }).click();
+await importDialog.locator('.summary').waitFor();
+await editor.waitForTimeout(500);
+await shot(importDialog, '12-import-summary.png');
+await importDialog.getByRole('button', { name: 'Cancel' }).click();
 
 await editor.goto(`${B}/admin/content/articles`);
 await listShot(editor, '05-articles.png');
@@ -157,6 +205,18 @@ await admin.evaluate(() => {
 	for (let n = walker.nextNode(); n; n = walker.nextNode()) if (n.textContent.includes('127.0.0.1')) n.textContent = 'https://api.supertext.com/v1/';
 });
 await admin.screenshot({ path: out + '09-supertext-module.png', clip: { x: 0, y: 0, width: 960, height: 760 } });
+
+// The language rows: one combo box per Directus language, the tone where Supertext offers it.
+{
+	const heading = admin.locator('.supertext-module h2').filter({ hasText: 'Languages' });
+	const save = admin.getByRole('button', { name: 'Save languages' });
+	await heading.evaluate((el) => el.scrollIntoView({ block: 'start' }));
+	await admin.waitForTimeout(400);
+	const a = await heading.boundingBox();
+	const b = await save.boundingBox();
+	const table = await admin.locator('table.languages').boundingBox();
+	await admin.screenshot({ path: out + '10-supertext-languages.png', clip: { x: table.x - 16, y: Math.max(0, a.y - 16), width: table.width + 32, height: b.y + b.height - a.y + 32 } });
+}
 
 await browser.close();
 console.log(`Saved screenshots to ${out}`);
