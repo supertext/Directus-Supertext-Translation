@@ -94,6 +94,7 @@ jobs:
           (cd test/e2e && npm ci --no-audit --no-fund)
           (cd test/docs && npm install --no-audit --no-fund)
           (cd test/e2e && npx playwright install --with-deps chromium)
+          (cd test/docs && npx playwright install chromium)
 
       # --- 1. Real Supertext API ----------------------------------------------------------
       - name: Check for the API key
