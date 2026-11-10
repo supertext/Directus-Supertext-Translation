@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copies the Supertext TypeScript SDK (built JavaScript) into vendor/supertext-sdk.
-# Source: https://github.com/Supertext/Supertext-API-SDK-and-Guide (sdk/typescript).
+# Source: https://github.com/Supertext/Supertext-API-SDK-Guide (sdk/typescript).
 #
 #   scripts/vendor-sdk.sh                  # latest main
 #   scripts/vendor-sdk.sh <commit|branch>  # a tag, branch or commit
@@ -18,7 +18,7 @@ trap 'rm -rf "$work"' EXIT
 if [ -n "${SDK_DIR:-}" ]; then
   src="$(cd "$SDK_DIR" && pwd)"
 else
-  git clone -q https://github.com/Supertext/Supertext-API-SDK-and-Guide "$work/sdk"
+  git clone -q https://github.com/Supertext/Supertext-API-SDK-Guide "$work/sdk"
   git -C "$work/sdk" checkout -q "$ref"
   src="$work/sdk"
 fi
@@ -38,7 +38,7 @@ printf '%s\n' "$version" > "$dest/VERSION"
 cat > "$dest/README.md" <<README
 # Supertext SDK (bundled copy)
 
-Built JavaScript of the TypeScript part of the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-and-Guide) (\`sdk/typescript\`), version $version, commit \`$commit\`. \`package.json\` makes it the \`supertext-sdk\` devDependency that the extension build bundles into \`dist/\`.
+Built JavaScript of the TypeScript part of the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-Guide) (\`sdk/typescript\`), version $version, commit \`$commit\`. \`package.json\` makes it the \`supertext-sdk\` devDependency that the extension build bundles into \`dist/\`.
 
 Don't edit these files: fix the SDK in its own repository, then run \`scripts/vendor-sdk.sh\`.
 README

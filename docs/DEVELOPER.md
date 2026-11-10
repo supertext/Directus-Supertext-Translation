@@ -113,12 +113,12 @@ HTTP 429 (`RATE_LIMIT_EXCEEDED`) is retried up to 4 times (`Retry-After`, else 1
 
 ### Supertext SDK
 
-All Supertext calls go through the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-and-Guide) (`sdk/typescript`, npm name `supertext-sdk`), the shared client of all Supertext plugins: it provides the client and the API key check (`checkApiKey()`, `apiKeyFingerprint`, `SDK_VERSION`); version reports and the ping are in *Supertext Plugin Health* (below). It is a devDependency (`"supertext-sdk": "file:vendor/supertext-sdk"`) that `directus-extension build` bundles into `dist/`, so sites install nothing besides the extension. `vendor/supertext-sdk/` holds its built JavaScript and type declarations, a lean `package.json` (`node_modules/supertext-sdk` is a link to it), `COMMIT` (the SDK commit) and `VERSION` (the SDK version). Never edit it: fix the SDK repository and copy it again with `scripts/vendor-sdk.sh [ref]`, which builds the SDK, replaces the copy entirely and updates `package-lock.json` when the SDK version changed:
+All Supertext calls go through the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-Guide) (`sdk/typescript`, npm name `supertext-sdk`), the shared client of all Supertext plugins: it provides the client and the API key check (`checkApiKey()`, `apiKeyFingerprint`, `SDK_VERSION`); version reports and the ping are in *Supertext Plugin Health* (below). It is a devDependency (`"supertext-sdk": "file:vendor/supertext-sdk"`) that `directus-extension build` bundles into `dist/`, so sites install nothing besides the extension. `vendor/supertext-sdk/` holds its built JavaScript and type declarations, a lean `package.json` (`node_modules/supertext-sdk` is a link to it), `COMMIT` (the SDK commit) and `VERSION` (the SDK version). Never edit it: fix the SDK repository and copy it again with `scripts/vendor-sdk.sh [ref]`, which builds the SDK, replaces the copy entirely and updates `package-lock.json` when the SDK version changed:
 
 ```bash
 scripts/vendor-sdk.sh                  # latest main of the SDK repository
 scripts/vendor-sdk.sh <commit|branch>  # a tag, branch or commit
-SDK_DIR=/path/to/Supertext-API-SDK-and-Guide scripts/vendor-sdk.sh   # a local clone, as it is
+SDK_DIR=/path/to/Supertext-API-SDK-Guide scripts/vendor-sdk.sh   # a local clone, as it is
 ```
 
 Then run the unit and integration tests and note the update in `CHANGELOG.md`. Once the SDK is on npm, the devDependency points at the published version instead; it stays bundled. `src/shared/supertext-client.ts` wraps the SDK client (options in milliseconds, a `fetch` for tests, the User-Agent `supertext-sdk-typescript Directus-Supertext-Translation/<version>`, the version from `package.json` as in the reports, `userAgent()` in `src/api/version.ts`).
