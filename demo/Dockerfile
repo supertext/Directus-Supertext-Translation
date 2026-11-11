@@ -1,6 +1,6 @@
 # Directus 12 demo with the Supertext extension built from this repository.
 # Build context: repository root.
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
 COPY vendor ./vendor
