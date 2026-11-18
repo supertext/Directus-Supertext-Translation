@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ### Changed
 
+- The bundled Markdown parser `marked` is 18.2.1 (was 18.2.0); Playwright 1.65.1 for the docs and end-to-end scripts.
 - Development: `@types/node` back on Node 22 (the oldest supported Node version), the build tools take the fixed `vite`, `serialize-javascript` and `decode-uri-component`, and the integration tests' Directus forces fixed versions of `tar`, `js-yaml`, `zod`, `@ai-sdk/provider-utils` and `@opentelemetry/core` (npm `overrides`). No change to the extension itself.
 
 ## [1.0.0] - 2026-11-09

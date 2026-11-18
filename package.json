@@ -84,7 +84,7 @@
     "vue-tsc": "^3.3.14"
   },
   "dependencies": {
-    "marked": "^18.2.0",
+    "marked": "^18.2.1",
     "node-html-parser": "^9.0.7"
   }
 }
