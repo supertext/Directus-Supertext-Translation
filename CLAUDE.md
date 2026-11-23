@@ -99,3 +99,7 @@ Lessons from testing against the live API (October 2026), to apply in every plug
 - Translation review (per language: the review service instead of Supertext): checkbox per language on the Supertext page, stored as `review` with the mapping in `supertext_state` (`src/api/settings.ts`); `SUPERTEXT_REVIEW_URL` (default `REVIEW_URL`, empty = off) in `src/api/config.ts`; `SupertextClient.forReview()` in `src/shared/supertext-client.ts`. Key check, reports and translation files never use it.
 - `demo/` is the Railway demo (Dockerfile `demo/Dockerfile`, context = repo root). The demo setup hook must stay idempotent and never log passwords. Demo secrets live only in Railway variables.
 - The entry names `supertext` (endpoint), `supertext-translate` (interface), `supertext-translate-flow` (operation) and the module id `supertext` (module bar) are stored in users' projects (fields, flows); renaming them is a breaking change.
+
+## Live E2E runs share one API key (always)
+
+Every push to `main` that touches the plugin, the demo or the tests starts the live E2E run, and all Supertext plugin repos share one Supertext API key, which is rate-limited per second. When the same kind of change goes to several repos, push them one repo at a time, at least 3 minutes apart (a loop with `sleep 180`), never in parallel. Docs-only changes (`docs/`, `README.md`, `CHANGELOG.md`, `CLAUDE.md`) don't start it and can go together. A live run that failed with `RATE_LIMIT_EXCEEDED` collided with another repo's run, it isn't a bug: rerun it on its own.
