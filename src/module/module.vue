@@ -148,7 +148,7 @@ const saveError = ref('');
 function displayName(target: Target): string {
 	if (target.code.includes('-u-')) return target.name; // Swiss German dialects: Intl only knows "Swiss German"
 	try {
-		const name = new Intl.DisplayNames([currentLanguage()], { type: 'language' }).of(target.code);
+		const name = new Intl.DisplayNames([currentLanguage()], { type: 'language', languageDisplay: 'standard' }).of(target.code);
 		return name && name !== target.code ? name : target.name;
 	} catch {
 		return target.name;

@@ -151,7 +151,7 @@ await kit.say('Click Test connection. The connection to Supertext works.', {
 
 // 6. Language mapping.
 const deRow = page.locator('table.languages tr').filter({ hasText: 'de-CH' });
-await kit.say('Under Languages, each Directus language gets a Supertext language. For German, choose Swiss High German.', {
+await kit.say('Under Languages, each Directus language gets a Supertext language. For German, choose German (Switzerland).', {
 	caption: '<b>Languages</b>: choose the Supertext language for each language',
 	during: async () => {
 		await scrollTo(page.locator('.supertext-module h2').filter({ hasText: 'Languages' }));
@@ -160,7 +160,7 @@ await kit.say('Under Languages, each Directus language gets a Supertext language
 		await page.waitForTimeout(400);
 		await page.keyboard.type('Swiss', { delay: 90 });
 		await page.waitForTimeout(500);
-		await kit.click(page.locator('.v-list-item').filter({ hasText: 'Swiss High German (de-CH)' }).first());
+		await kit.click(page.locator('.v-list-item').filter({ hasText: 'German (Switzerland) (de-CH)' }).first());
 	},
 });
 await kit.say('Translation review can be ticked for each language. Leave it off for now.', {
