@@ -4,8 +4,14 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ## [Unreleased]
 
+### Added
+
+- *Send configuration to Supertext* on the Supertext page (administrators): sends the installed Directus extensions and the language mapping to Supertext support in one report (Supertext Plugin Health 0.4.0). Nothing is sent while version reports are off.
+
 ### Changed
 
+- Version reports go to `https://pluginhealth.supertext.com` (Supertext Plugin Health 0.4.0).
+- The docs screenshots show real Supertext translations: CI takes them with the live API (secret `SUPERTEXT_API_KEY`); the stand-in API translates only without the key. Version reports still go to the stand-in.
 - Language lists name Supertext's languages the way Supertext's own language list does, in the interface language: *German (Switzerland)*, *Deutsch (Schweiz)*, *allemand (Suisse)*, *tedesco (Svizzera)* instead of *Swiss High German*, *Schweizer Hochdeutsch*, *allemand suisse*, *alto tedesco svizzero* (likewise *French (Switzerland)*, *English (United States)* …).
 - The bundled Markdown parser `marked` is 18.2.1 (was 18.2.0); Playwright 1.65.1 for the docs and end-to-end scripts.
 - Development: `@types/node` back on Node 22 (the oldest supported Node version), the build tools take the fixed `vite`, `serialize-javascript` and `decode-uri-component`, and the integration tests' Directus forces fixed versions of `tar`, `js-yaml`, `zod`, `@ai-sdk/provider-utils` and `@opentelemetry/core` (npm `overrides`). No change to the extension itself.

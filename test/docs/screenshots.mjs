@@ -82,7 +82,7 @@ await box.locator('.targets').waitFor();
 await shot(box, '01-translate-box.png');
 
 await box.getByRole('button', { name: 'Translate' }).click();
-await box.locator('.result').first().waitFor({ timeout: 180_000 });
+await box.locator('.result').first().waitFor({ timeout: 300_000 });
 await editor.waitForTimeout(500);
 await clip(editor, box, field(editor, 'Translations'), '02-translated-form.png');
 

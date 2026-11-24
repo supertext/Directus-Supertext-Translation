@@ -15,7 +15,7 @@ import { createRequire } from 'node:module';
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Knex } from 'knex';
-import { InstallationReporter, pingResponse, reporterState, reportsEnabled, type KeyCheck, type PingResponse, type ReporterOptions, type ReporterResult, type ReporterState } from 'supertext-plugin-health';
+import { InstallationReporter, pingResponse, reporterState, reportsEnabled, type Extension, type KeyCheck, type LanguageMapping, type PingResponse, type ReporterOptions, type ReporterResult, type ReporterState } from 'supertext-plugin-health';
 import { SDK_VERSION } from 'supertext-sdk';
 import { apiKeyFingerprint, SupertextClient, type SupertextClientOptions } from 'supertext-sdk/v1';
 import type { SupertextConfig } from './config.js';
@@ -158,7 +158,7 @@ export class Reporting {
 		return pingResponse(typeof challenge === 'string' ? challenge : null, { plugin: PLUGIN_NAME, enabled: this.enabled });
 	}
 
-	reporter(config: SupertextConfig, url: string): InstallationReporter {
+	reporter(config: SupertextConfig, url: string, languages?: LanguageMapping[]): InstallationReporter {
 		const { clientOptions: overrideClientOptions, ...overrides } = this.ctx.reporterOverrides ?? {};
 		const clientOptions: SupertextClientOptions = {
 			baseUrl: config.baseUrl,
@@ -174,6 +174,7 @@ export class Reporting {
 			sdkVersion: SDK_VERSION,
 			callbackUrl: `${url}/${PING_PATH}`,
 			keyChecker: { check: (apiKey) => new SupertextClient(apiKey, clientOptions).checkApiKey(), fingerprint: apiKeyFingerprint },
+			...(languages ? { languages: () => languages } : {}),
 			...overrides,
 		});
 	}
@@ -205,6 +206,27 @@ export class Reporting {
 		return task;
 	}
 
+	/**
+	 * "Send configuration to Supertext" (Supertext page): the installed extensions and every language with
+	 * its Supertext code in one `extensions` report, sent now (also within the hour after a failed report).
+	 * Null while version reports are off or without a site URL. Never throws.
+	 */
+	sendConfiguration(config: SupertextConfig, url: string | null, extensions: Extension[], languages: LanguageMapping[]): Promise<ReporterResult | null> {
+		const task = this.#queue.then(async () => {
+			if (!url || !this.enabled) return null;
+			try {
+				const result = await this.reporter(config, url, languages).sendExtensions(await this.store.load(), extensions);
+				await this.store.save(result.state);
+				return result;
+			} catch (error) {
+				this.ctx.logger.debug(`[supertext] configuration not sent: ${(error as Error)?.message ?? error}`);
+				return null;
+			}
+		});
+		this.#queue = task;
+		return task;
+	}
+
 	/** For back-end requests: runs in the background, so the request doesn't wait for Supertext or the center. */
 	inBackground(action: Action, config: SupertextConfig, url: string | null, httpStatus?: number): void {
 		void this.run(action, config, url, httpStatus);
@@ -218,4 +240,30 @@ export class Reporting {
 			return null;
 		}
 	}
+}
+
+/** This extension's package name: not sent by "Send configuration to Supertext". */
+const OWN_PACKAGE = 'directus-extension-supertext-translation';
+
+/**
+ * The installed extensions for "Send configuration to Supertext", from Directus's ExtensionsService
+ * (`readAll()`): one entry per extension or bundle (a bundle's entries are left out), its name and
+ * version from the package, whether it is enabled, and its type. This extension is left out.
+ */
+export function installedExtensions(list: unknown): Extension[] {
+	if (!Array.isArray(list)) return [];
+	const out: Extension[] = [];
+	for (const item of list as Array<{ id?: unknown; bundle?: unknown; schema?: { name?: unknown; version?: unknown; type?: unknown } | null; meta?: { enabled?: unknown; folder?: unknown } | null }>) {
+		if (!item || item.bundle) continue;
+		const schema = item.schema ?? {};
+		const name = typeof schema.name === 'string' && schema.name ? schema.name : typeof item.meta?.folder === 'string' ? item.meta.folder : String(item.id ?? '');
+		if (!name || name === OWN_PACKAGE) continue;
+		out.push({
+			name,
+			version: typeof schema.version === 'string' ? schema.version : null,
+			active: item.meta?.enabled !== false,
+			type: typeof schema.type === 'string' ? schema.type : 'extension',
+		});
+	}
+	return out.sort((a, b) => a.name.localeCompare(b.name));
 }

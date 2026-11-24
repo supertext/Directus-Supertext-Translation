@@ -65,6 +65,8 @@ JSON values can be written as they are, commas included (Directus would normally
 
 **Send version information to Supertext** is on by default. The extension then sends the site URL and the versions of this extension, Directus and Node.js to Supertext after an update and when the API key changes, so Supertext support can see which version you run. A report contains exactly: the site URL (`PUBLIC_URL`, else the address the request came in on), the extension's name and version, the Directus and Node.js versions, the Supertext SDK version, whether a key is set, the result of the API key check below (status, time, HTTP status, Supertext's error code) and the address of the ping endpoint. **No content, no API key and no personal data are sent.** Reports go from the Directus server, never from the browser; a report that fails is not retried for an hour and never slows down or breaks a translation. Set `SUPERTEXT_VERSION_REPORTS=0` and restart Directus to turn it off: nothing is sent at all then, and the ping endpoint answers 404.
 
+**Send configuration to Supertext** (the Supertext page, administrators): when you contact Supertext support, this button sends, in one report, the extensions installed in Directus (name, version, whether enabled; this one is left out) and the Supertext language of each language. Nothing else is sent, and nothing at all while version information is off.
+
 **The API key check** runs whether or not version information is sent: when Directus first runs the extension's code with a key it hasn't checked yet (the key in `SUPERTEXT_API_KEY` is compared by a fingerprint kept in the database, never the key itself), on **Test connection**, and when Supertext rejects the key during a translation. It's Supertext's cost-free `features` call; nothing is translated or billed. The Supertext page shows the latest result with its time: *the connection works*, *Supertext rejected the API key* (with the links to create an account and generate a key), *no API key is set*, *Supertext can't be reached* or *Supertext answered with an error*.
 
 **The ping endpoint** `GET <PUBLIC_URL>/supertext/ping?challenge=…` is public (no login) and answers only `{"ok":true,"plugin":"Directus-Supertext-Translation","challenge":"…"}`, so Supertext can see that the site is reachable from the internet. It returns nothing else: no versions, no settings, no data.
@@ -77,7 +79,7 @@ The bundle adds a **Supertext** page for administrators: the installed plugin ve
 
 Directus hides new modules until they're switched on: *Settings → Settings → Module Bar*, enable **Supertext**. Only administrators see it.
 
-![The Supertext page: plugin version, API key set, live API address, the review service's address, languages at a time, timeout, the API key check "API key checked: the connection to Supertext works." with its time, Test connection, Send version information to Supertext: On, and the start of the Languages section](images/09-supertext-module.png)
+![The Supertext page: plugin version, API key set, live API address, the review service's address, languages at a time, timeout, the API key check "API key checked: the connection to Supertext works." with its time, Test connection, Send version information to Supertext: On, the Send configuration to Supertext button, and the start of the Languages section](images/09-supertext-module.png)
 
 ### Interface languages
 

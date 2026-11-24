@@ -31,6 +31,20 @@ rm -rf "$work/ts/node_modules" "$work/ts/dist"
 rm -rf "$dest"
 mkdir -p "$dest"
 (cd "$work/ts/dist" && find . -name '*.js' -o -name '*.d.ts' | while read -r f; do mkdir -p "$OLDPWD/$dest/$(dirname "$f")"; cp "$f" "$OLDPWD/$dest/$f"; done)
+# Plugin Health 0.4+ reads the dashboard address from config.json with an import attribute
+# (`import config from './config.json' with { type: 'json' }`), which not every bundler accepts:
+# the copy gets the same values as a constant instead.
+if [ -f "$src/plugin-health/typescript/src/config.json" ]; then
+  node -e '
+    const fs = require("fs");
+    const [index, json] = process.argv.slice(1);
+    const config = JSON.parse(fs.readFileSync(json, "utf8"));
+    const source = fs.readFileSync(index, "utf8");
+    const line = /^import config from \x27\.\/config\.json\x27 with \{ type: \x27json\x27 \};?$/m;
+    if (!line.test(source)) { console.error("config.json import not found in " + index); process.exit(1); }
+    fs.writeFileSync(index, source.replace(line, "// Inlined from config.json by scripts/vendor-plugin-health.sh.\nconst config = " + JSON.stringify(config) + ";"));
+  ' "$dest/index.js" "$src/plugin-health/typescript/src/config.json"
+fi
 cp "$src/plugin-health/typescript/LICENSE" "$dest/LICENSE"
 printf '{\n  "name": "supertext-plugin-health",\n  "version": "%s",\n  "private": true,\n  "type": "module",\n  "main": "./index.js",\n  "types": "./index.d.ts",\n  "exports": {\n    ".": { "types": "./index.d.ts", "import": "./index.js" }\n  },\n  "license": "MIT"\n}\n' "$version" > "$dest/package.json"
 printf '%s\n' "$commit" > "$dest/COMMIT"

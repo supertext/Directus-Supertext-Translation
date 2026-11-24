@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { publicUrl, Reporting, siteUrl, versionReportsEnabled } from '../src/api/reporting.js';
+import { installedExtensions, publicUrl, Reporting, siteUrl, versionReportsEnabled } from '../src/api/reporting.js';
 import { readConfig } from '../src/api/config.js';
 import { SDK_VERSION } from 'supertext-sdk';
 import { apiKeyFingerprint } from 'supertext-sdk/v1';
@@ -79,11 +79,13 @@ describe('Reporting', () => {
 		const reporting = new Reporting({ env: {}, database: db, logger, reporterOverrides: { fetch, reportUrl: 'https://center.test/r', clientOptions: { fetch } } });
 		const versions = reporting.reporter(config, 'https://cms.example.ch').versions;
 		const keyCheck = { status: 'ok', checkedAt: '2026-10-01T08:00:00Z', httpStatus: 200, errorCode: null, fingerprint: apiKeyFingerprint('k1') };
-		await reporting.store.save({ reportedVersions: versions, reportedKeyStatus: 'ok', lastFailureAt: null, keyCheck });
+		// Stored by the SDK 0.2 reporter (no keyChecks, reportedKeyStatuses): written as it was.
+		await reporting.store.write('reporter', JSON.stringify({ reportedVersions: versions, reportedKeyStatus: 'ok', lastFailureAt: null, keyCheck }));
 		const result = await reporting.run('onRequest', config, 'https://cms.example.ch');
 		expect(result?.event).toBeNull();
 		expect(reports).toHaveLength(0);
-		expect(JSON.parse(rows.get('reporter')!)).toEqual({ reportedVersions: versions, reportedKeyStatus: 'ok', lastFailureAt: null, keyCheck });
+		// Plugin Health 0.2+ adds keyChecks and reportedKeyStatuses (null with one key); everything else is kept.
+		expect(JSON.parse(rows.get('reporter')!)).toEqual({ reportedVersions: versions, reportedKeyStatus: 'ok', lastFailureAt: null, keyCheck, keyChecks: null, reportedKeyStatuses: null });
 	});
 
 	it('marks the key invalid after a 401 and reports the change once', async () => {
@@ -125,5 +127,37 @@ describe('Reporting', () => {
 		const reporting = new Reporting({ env: {}, database: db, logger });
 		await expect(reporting.run('onRequest', config, 'https://cms.example.ch')).resolves.toBeNull();
 		await expect(reporting.lastCheck()).resolves.toBeNull();
+	});
+});
+
+describe('Send configuration to Supertext', () => {
+	const config = readConfig({ SUPERTEXT_API_KEY: 'k1' }, {});
+
+	it('lists the installed extensions and bundles, not bundle entries or this extension', () => {
+		expect(
+			installedExtensions([
+				{ id: 'a', bundle: null, schema: { name: 'directus-extension-seo', version: '2.0.1', type: 'bundle' }, meta: { enabled: true, folder: 'a' } },
+				{ id: 'b', bundle: 'a', schema: { name: 'seo-interface', type: 'interface' }, meta: { enabled: true } },
+				{ id: 'c', bundle: null, schema: { name: 'directus-extension-supertext-translation', version: '1.0.0', type: 'bundle' }, meta: { enabled: true } },
+				{ id: 'd', bundle: null, schema: null, meta: { enabled: false, folder: 'my-hook' } },
+			]),
+		).toEqual([
+			{ name: 'directus-extension-seo', version: '2.0.1', active: true, type: 'bundle' },
+			{ name: 'my-hook', version: null, active: false, type: 'extension' },
+		]);
+		expect(installedExtensions(undefined)).toEqual([]);
+	});
+
+	it('sends the extensions and the language mapping in one extensions report, nothing with reports off', async () => {
+		const { db } = fakeDatabase();
+		const { fetch, reports } = fakeFetch();
+		const make = (env: Record<string, string>) => new Reporting({ env, database: db, logger, reporterOverrides: { fetch, reportUrl: 'https://center.test/r', clientOptions: { fetch } } });
+		const extensions = [{ name: 'directus-extension-seo', version: '2.0.1', active: true, type: 'bundle' }];
+		const languages = [{ code: 'de-CH', supertext: 'de-CH' }, { code: 'de-LI', supertext: null }];
+		expect(await make({}).sendConfiguration(config, 'https://cms.example.ch', extensions, languages)).toMatchObject({ event: 'extensions', sent: true });
+		expect(reports).toHaveLength(1);
+		expect(reports[0]).toMatchObject({ event: 'extensions', extensions: [{ name: 'directus-extension-seo', version: '2.0.1' }], languages });
+		expect(await make({ SUPERTEXT_VERSION_REPORTS: '0' }).sendConfiguration(config, 'https://cms.example.ch', extensions, languages)).toBeNull();
+		expect(reports).toHaveLength(1);
 	});
 });

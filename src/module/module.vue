@@ -47,6 +47,11 @@
 					<dd>{{ status.reports?.enabled ? t('module.reportsOn') : t('module.reportsOff') }}</dd>
 				</dl>
 				<p class="hint">{{ t('module.reportsHelp') }}</p>
+				<div class="test" data-supertext-send-configuration>
+					<v-button secondary :loading="sending" :disabled="!status.reports?.enabled" @click="sendConfiguration">{{ t('module.config') }}</v-button>
+					<span v-if="configResult" :class="configOk ? 'ok' : 'fail'"><v-icon :name="configOk ? 'check' : 'error'" small /> {{ configResult }}</span>
+				</div>
+				<p class="hint">{{ t('module.configHelp') }}</p>
 
 				<h2 class="type-title">{{ t('module.languages') }}</h2>
 				<p class="hint">{{ t('module.languagesHint') }}</p>
@@ -110,6 +115,9 @@ const api = useApi();
 const status = ref<any>(null);
 const error = ref('');
 const testing = ref(false);
+const sending = ref(false);
+const configResult = ref<string | null>(null);
+const configOk = ref(false);
 const tested = ref<string | null>(null);
 type KeyCheck = { status: 'ok' | 'invalid' | 'missing' | 'unreachable' | 'error'; checkedAt: string; httpStatus: number | null };
 const check = ref<KeyCheck | null>(null);
@@ -209,6 +217,23 @@ async function saveLanguages() {
 		saveError.value = apiErrorText(e);
 	} finally {
 		saving.value = false;
+	}
+}
+
+/** "Send configuration to Supertext": the installed extensions and the language mapping, for Supertext support. */
+async function sendConfiguration() {
+	sending.value = true;
+	configResult.value = null;
+	try {
+		const data = (await api.post('/supertext/configuration')).data.data as { sent: boolean | null; extensions: number; languages: number };
+		configOk.value = data.sent === true;
+		configResult.value =
+			data.sent === null ? t('module.configOff') : data.sent ? t('module.configSent', { extensions: data.extensions, languages: data.languages }) : t('module.configFailed');
+	} catch (e: any) {
+		configOk.value = false;
+		configResult.value = apiErrorText(e);
+	} finally {
+		sending.value = false;
 	}
 }
 

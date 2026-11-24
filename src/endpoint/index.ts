@@ -4,7 +4,7 @@ import { findTranslationsRelation, loadItem, translateItem, TranslateError } fro
 import { SupertextClient } from '../shared/supertext-client.js';
 import { politenessFor, suggestTarget, supportsPoliteness, targetCodeOrNull, targetOptions } from '../shared/languages.js';
 import { extensionVersion, userAgent } from '../api/version.js';
-import { Reporting, siteUrl } from '../api/reporting.js';
+import { installedExtensions, Reporting, siteUrl } from '../api/reporting.js';
 import { exportItem, importItem, readBody, type Format } from '../api/files.js';
 import { applyLanguageChanges, LanguageSettingsError, loadLanguageSettings, saveLanguageSettings, withLanguageSettings } from '../api/settings.js';
 
@@ -14,6 +14,7 @@ import { applyLanguageChanges, LanguageSettingsError, loadLanguageSettings, save
  * /supertext/status     GET  version, configuration and languages (admins; the Supertext module)
  * /supertext/languages  POST { languages: [{ language, target, politeness, review }] } saves the language mapping (admins)
  * /supertext/test       POST cost-free check of the API key (admins)
+ * /supertext/configuration POST "Send configuration to Supertext": installed extensions and the language mapping (admins)
  * /supertext/ping       GET  ?challenge=   public: the Commando Center's reachability check
  * /supertext/export     POST { collection, item, field?, source?, targets, format: 'xliff'|'html', fields? }  the file (download)
  * /supertext/import     POST ?collection=&item=&field=&includeChanged=1, body: the file (text, ≤ 10 MB)  the jobs for the form
@@ -59,49 +60,55 @@ export default defineEndpoint({
 			if (!req.accountability.admin) throw new TranslateError('Only administrators can do this.', 403, 'forbidden', {}, 'error.admin_only');
 		};
 
+		/** One row per language code of every languages collection used by a translations field (Supertext page, Send configuration). */
+		const languageRows = async (req: any, schema: any, fromEnv: ReturnType<typeof readConfig>, saved: Awaited<ReturnType<typeof loadLanguageSettings>>, config: ReturnType<typeof readConfig>) => {
+			// Every languages collection used by a translations field, with its rows.
+			const languageCollections = new Map<string, string>();
+			for (const collection of Object.keys(schema.collections)) {
+				try {
+					const rel = findTranslationsRelation(schema, collection);
+					languageCollections.set(rel.languages, rel.languagePk);
+				} catch {
+					// not a collection with translations
+				}
+			}
+			// One row per language code (the mapping is per code, also when two collections list it).
+			const languages: Record<string, unknown>[] = [];
+			const seen = new Set<string>();
+			for (const [collection, pk] of languageCollections) {
+				const rows: any[] = await new services.ItemsService(collection, { schema, accountability: req.accountability }).readByQuery({ limit: -1, sort: [pk] });
+				for (const row of rows) {
+					const code = String(row[pk]);
+					if (seen.has(code)) continue;
+					seen.add(code);
+					const target = targetCodeOrNull(code, config.languageMap);
+					languages.push({
+						collection,
+						code,
+						name: String(row.name ?? code),
+						/** Sent to Supertext: the mapping, else exact match, else the SDK default; null: unsupported_language. */
+						target,
+						saved: saved.codes[code] ?? null,
+						override: fromEnv.languageMap[code] ?? null,
+						suggested: suggestTarget(code),
+						politeness: politenessFor(code, config.politeness),
+						savedPoliteness: saved.politeness[code] ?? 'default',
+						politenessOverride: fromEnv.politeness[code] ?? null,
+						politenessSupported: target ? supportsPoliteness(target) : null,
+						/** *Translation review* on: translations into this language go through the review service. */
+						review: config.review[code] === true,
+					});
+				}
+			}
+			return languages;
+		};
+
 		router.get('/status', async (req: any, res: any) => {
 			try {
 				requireAdmin(req);
 				const schema = req.schema ?? (await getSchema());
 				const { env: fromEnv, saved, config } = await settings();
-				// Every languages collection used by a translations field, with its rows.
-				const languageCollections = new Map<string, string>();
-				for (const collection of Object.keys(schema.collections)) {
-					try {
-						const rel = findTranslationsRelation(schema, collection);
-						languageCollections.set(rel.languages, rel.languagePk);
-					} catch {
-						// not a collection with translations
-					}
-				}
-				// One row per language code (the mapping is per code, also when two collections list it).
-				const languages: Record<string, unknown>[] = [];
-				const seen = new Set<string>();
-				for (const [collection, pk] of languageCollections) {
-					const rows: any[] = await new services.ItemsService(collection, { schema, accountability: req.accountability }).readByQuery({ limit: -1, sort: [pk] });
-					for (const row of rows) {
-						const code = String(row[pk]);
-						if (seen.has(code)) continue;
-						seen.add(code);
-						const target = targetCodeOrNull(code, config.languageMap);
-						languages.push({
-							collection,
-							code,
-							name: String(row.name ?? code),
-							/** Sent to Supertext: the mapping, else exact match, else the SDK default; null: unsupported_language. */
-							target,
-							saved: saved.codes[code] ?? null,
-							override: fromEnv.languageMap[code] ?? null,
-							suggested: suggestTarget(code),
-							politeness: politenessFor(code, config.politeness),
-							savedPoliteness: saved.politeness[code] ?? 'default',
-							politenessOverride: fromEnv.politeness[code] ?? null,
-							politenessSupported: target ? supportsPoliteness(target) : null,
-							/** *Translation review* on: translations into this language go through the review service. */
-							review: config.review[code] === true,
-						});
-					}
-				}
+				const languages = await languageRows(req, schema, fromEnv, saved, config);
 				report(req, config);
 				res.json({
 					data: {
@@ -151,6 +158,28 @@ export default defineEndpoint({
 				const result = await reporting.run('testConnection', config, siteUrl(env, req));
 				const check = result?.check ?? (await new SupertextClient({ apiKey: config.apiKey, baseUrl: config.baseUrl, userAgent: userAgent() }).checkApiKey());
 				res.json({ data: { ok: check.status === 'ok', check } });
+			} catch (error) {
+				fail(res, error);
+			}
+		});
+
+		// "Send configuration to Supertext": the installed extensions and the language mapping in one report.
+		// `sent: null` while version reports are off.
+		router.post('/configuration', async (req: any, res: any) => {
+			try {
+				requireAdmin(req);
+				const schema = req.schema ?? (await getSchema());
+				const { env: fromEnv, saved, config } = await settings();
+				let extensions: ReturnType<typeof installedExtensions> = [];
+				try {
+					extensions = installedExtensions(await new services.ExtensionsService({ schema, accountability: req.accountability }).readAll());
+				} catch (error) {
+					logger.debug(`[supertext] could not read the extensions: ${(error as Error)?.message ?? error}`);
+				}
+				const languages = (await languageRows(req, schema, fromEnv, saved, config)).map((row) => ({ code: String(row.code), supertext: (row.target as string | null) ?? null }));
+				if (!reporting.enabled) return res.json({ data: { sent: null, extensions: extensions.length, languages: languages.length } });
+				const result = await reporting.sendConfiguration(fromEnv, siteUrl(env, req), extensions, languages);
+				res.json({ data: { sent: Boolean(result?.sent), extensions: extensions.length, languages: languages.length } });
 			} catch (error) {
 				fail(res, error);
 			}
