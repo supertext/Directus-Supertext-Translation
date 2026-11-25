@@ -13,7 +13,8 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 - Version reports go to `https://pluginhealth.supertext.com` (Supertext Plugin Health 0.4.0).
 - The docs screenshots show real Supertext translations: CI takes them with the live API (secret `SUPERTEXT_API_KEY`); the stand-in API translates only without the key. Version reports still go to the stand-in.
 - Language lists name Supertext's languages the way Supertext's own language list does, in the interface language: *German (Switzerland)*, *Deutsch (Schweiz)*, *allemand (Suisse)*, *tedesco (Svizzera)* instead of *Swiss High German*, *Schweizer Hochdeutsch*, *allemand suisse*, *alto tedesco svizzero* (likewise *French (Switzerland)*, *English (United States)* …).
-- The bundled Markdown parser `marked` is 18.2.1 (was 18.2.0); Playwright 1.65.1 for the docs and end-to-end scripts.
+- The bundled Markdown parser `marked` is 18.3.0 (was 18.2.0); Playwright 1.65.1 for the docs and end-to-end scripts.
+- Tested with Directus 12.7.0: the demo and the integration tests moved from Directus 12.6.1 to 12.7.0; Directus extensions SDK 18.1.2.
 - Development: `@types/node` back on Node 22 (the oldest supported Node version), the build tools take the fixed `vite`, `serialize-javascript` and `decode-uri-component`, and the integration tests' Directus forces fixed versions of `tar`, `js-yaml`, `zod`, `@ai-sdk/provider-utils` and `@opentelemetry/core` (npm `overrides`). No change to the extension itself.
 
 ## [1.0.0] - 2026-11-09
