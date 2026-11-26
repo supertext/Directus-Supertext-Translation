@@ -4,6 +4,8 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-26
+
 ### Added
 
 - Indonesian, Romanian, Thai and Vietnamese (`id`, `ro`, `th`, `vi`) can be chosen as Supertext languages, all with formal and informal address (Supertext SDK 0.7.0).
@@ -69,7 +71,6 @@ First stable release. Every plugin release is now tested end to end against the 
 - The *No Supertext API key is configured* message on *Test connection* and the *Authentication failure* message now link to both Supertext account signup and API key generation.
 
 ### Fixed
-
 
 ## [0.1.0] - 2026-10-07
 
