@@ -1,4 +1,5 @@
 import { type Segment } from './html-document.js';
+import { type Correction, type PendingCorrectionsOptions } from './corrections.js';
 import { type ApiKeyCheck } from './api-key-check.js';
 export declare const LIVE_BASE_URL = "https://api.supertext.com/v1/";
 /** `more`: formal address (Sie, vous, Lei). `less`: informal (du, tu). `default`: Supertext decides. */
@@ -88,4 +89,17 @@ export declare class SupertextClient {
      */
     translateTexts(segments: ReadonlyMap<string, SegmentInput>, targetLang: string, options?: TranslateTextsOptions): Promise<Map<string, string>>;
     translateTexts(segments: Readonly<Record<string, SegmentInput>>, targetLang: string, options?: TranslateTextsOptions): Promise<Record<string, string>>;
+    /**
+     * Corrections reviewers made that the integration hasn't written into the CMS yet
+     * (Supertext Localization Review; spec/corrections.json). Only the review service
+     * answers this: against Supertext's API it throws `not_found`. Follows all pages.
+     * `segmentId` is the `data-st-id` the integration sent, so this is useful when the
+     * integration builds its documents with its own ids (`translateHtml`).
+     */
+    pendingCorrections(options?: PendingCorrectionsOptions): Promise<Correction[]>;
+    /**
+     * Tells the review service these corrections are in the CMS now; returns how many it
+     * accepted. Only the fetched `version` counts: a newer correction stays pending.
+     */
+    acknowledgeCorrections(corrections: readonly Pick<Correction, 'id' | 'version'>[]): Promise<number>;
 }

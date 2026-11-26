@@ -13,6 +13,8 @@ export { ErrorCode, SupertextError, errorForFileStatus, errorForStatus } from '.
 export type { SupertextErrorCode, SupertextErrorDetails } from './errors.js';
 export { DEFAULT_TARGETS, Languages, SOURCE_LANGUAGES, TARGET_LANGUAGES, defaultTarget, matchSource, matchTarget, suggestTarget, supportsPoliteness, targetOptions, } from './languages.js';
 export type { LanguageMapping, SourceLanguage, TargetLanguage } from './languages.js';
+export { ACKNOWLEDGE_BATCH_SIZE, CORRECTIONS_PAGE_SIZE, acknowledgeBody, acknowledgedCount, correctionsPath, parseCorrectionsPage } from './corrections.js';
+export type { Correction, PendingCorrectionsOptions } from './corrections.js';
 export { HtmlDocument } from './html-document.js';
 export type { Segment } from './html-document.js';
 export { DEFAULT_MAX_CHARACTERS, planBatches } from './batching.js';

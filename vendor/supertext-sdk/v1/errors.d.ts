@@ -5,23 +5,23 @@
  */
 /** Stable error codes. The string values are shared by all Supertext SDKs. */
 export declare const ErrorCode: {
-    readonly MissingApiKey: "missing_api_key";
-    readonly AuthenticationFailure: "authentication_failure";
-    readonly InvalidLanguagePair: "invalid_language_pair";
-    readonly UnsupportedLanguage: "unsupported_language";
-    readonly UnsupportedFeature: "unsupported_feature";
-    readonly NotFound: "not_found";
-    readonly PayloadTooLarge: "payload_too_large";
-    readonly TooManyRequests: "too_many_requests";
-    readonly ServiceUnavailable: "service_unavailable";
-    readonly UnexpectedStatus: "unexpected_status";
-    readonly TransportError: "transport_error";
-    readonly NoFileId: "no_file_id";
-    readonly TranslationError: "translation_error";
-    readonly QuotaExceeded: "quota_exceeded";
-    readonly FileDeleted: "file_deleted";
-    readonly Timeout: "timeout";
-    readonly IncompleteResponse: "incomplete_response";
+    readonly MissingApiKey: 'missing_api_key';
+    readonly AuthenticationFailure: 'authentication_failure';
+    readonly InvalidLanguagePair: 'invalid_language_pair';
+    readonly UnsupportedLanguage: 'unsupported_language';
+    readonly UnsupportedFeature: 'unsupported_feature';
+    readonly NotFound: 'not_found';
+    readonly PayloadTooLarge: 'payload_too_large';
+    readonly TooManyRequests: 'too_many_requests';
+    readonly ServiceUnavailable: 'service_unavailable';
+    readonly UnexpectedStatus: 'unexpected_status';
+    readonly TransportError: 'transport_error';
+    readonly NoFileId: 'no_file_id';
+    readonly TranslationError: 'translation_error';
+    readonly QuotaExceeded: 'quota_exceeded';
+    readonly FileDeleted: 'file_deleted';
+    readonly Timeout: 'timeout';
+    readonly IncompleteResponse: 'incomplete_response';
 };
 export type SupertextErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 export interface SupertextErrorDetails {
