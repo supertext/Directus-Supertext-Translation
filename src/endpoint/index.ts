@@ -47,7 +47,11 @@ export default defineEndpoint({
 			}
 			const e = error as any;
 			const status = typeof e?.status === 'number' ? e.status : 500;
-			if (status >= 500) logger.error(`[supertext] ${e?.stack ?? e}`);
+			if (status >= 500) {
+				// The details stay in the log; the editor gets a plain message.
+				logger.error(`[supertext] ${e?.stack ?? e}`);
+				return res.status(status).json({ errors: [{ message: 'Something went wrong. The details are in the Directus log.', extensions: { code: 'INTERNAL', key: 'error.unexpected' } }] });
+			}
 			return res.status(status).json({ errors: [{ message: e?.message ?? 'Unexpected error', extensions: { code: e?.code ?? 'INTERNAL' } }] });
 		};
 

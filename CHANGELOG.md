@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Format: [Keep a Changel
 
 ## [Unreleased]
 
+### Security
+
+- The Supertext endpoint no longer returns the text of unexpected server errors; the app shows a plain message (all four interface languages) and the details stay in the Directus log.
+
 ## [1.1.0] - 2026-11-26
 
 ### Added
