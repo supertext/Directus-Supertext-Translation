@@ -1,6 +1,6 @@
 # Directus 12 demo with the Supertext extension built from this repository.
 # Build context: repository root.
-FROM node:26-alpine AS build
+FROM node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
 COPY vendor ./vendor
@@ -9,7 +9,7 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npx directus-extension build
 
-FROM directus/directus:12.7.0
+FROM directus/directus:12.7.0@sha256:f197911d949a37d882f781b0381955b851c86625435014cd67bdaf3eabcff2a7
 USER root
 COPY --from=build /src/dist /directus/extensions/directus-extension-supertext-translation/dist
 COPY package.json /directus/extensions/directus-extension-supertext-translation/package.json
